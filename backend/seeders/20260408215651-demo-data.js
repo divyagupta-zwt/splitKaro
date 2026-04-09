@@ -37,25 +37,6 @@ module.exports = {
     ]);
 
     await queryInterface.bulkInsert('expenses', [{
-      id: 2,
-      group_id: 1,
-      paid_by: 2,
-      amount: 2400.00,
-      description: 'Dinner at Beach Shack',
-      split_type: 'equal',
-      date: '2026-04-05',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }]);
-
-    await queryInterface.bulkInsert('expense_splits', [
-      { expense_id: 2, member_id: 1, amount_owed: 600.00, createdAt: new Date(), updatedAt: new Date() },
-      { expense_id: 2, member_id: 2, amount_owed: 600.00, createdAt: new Date(), updatedAt: new Date() },
-      { expense_id: 2, member_id: 3, amount_owed: 600.00, createdAt: new Date(), updatedAt: new Date() },
-      { expense_id: 2, member_id: 4, amount_owed: 600.00, createdAt: new Date(), updatedAt: new Date() }
-    ]);
-
-    await queryInterface.bulkInsert('expenses', [{
       id: 3,
       group_id: 1,
       paid_by: 3,
@@ -90,25 +71,6 @@ module.exports = {
       { expense_id: 4, member_id: 2, amount_owed: 360.00, createdAt: new Date(), updatedAt: new Date() },
       { expense_id: 4, member_id: 3, amount_owed: 300.00, createdAt: new Date(), updatedAt: new Date() },
       { expense_id: 4, member_id: 4, amount_owed: 180.00, createdAt: new Date(), updatedAt: new Date() }
-    ]);
-
-    await queryInterface.bulkInsert('expenses', [{
-      id: 5,
-      group_id: 1,
-      paid_by: 2,
-      amount: 1550.00,
-      description: 'Grocery & Snacks',
-      split_type: 'equal',
-      date: '2026-04-07',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }]);
-
-    await queryInterface.bulkInsert('expense_splits', [
-      { expense_id: 5, member_id: 1, amount_owed: 387.50, createdAt: new Date(), updatedAt: new Date() },
-      { expense_id: 5, member_id: 2, amount_owed: 387.50, createdAt: new Date(), updatedAt: new Date() },
-      { expense_id: 5, member_id: 3, amount_owed: 387.50, createdAt: new Date(), updatedAt: new Date() },
-      { expense_id: 5, member_id: 4, amount_owed: 387.50, createdAt: new Date(), updatedAt: new Date() }
     ]);
   },
 

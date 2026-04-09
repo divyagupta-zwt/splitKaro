@@ -4,6 +4,7 @@ const groupController = require('../controllers/group.controller');
 const expenseController = require('../controllers/expense.controllers');
 
 // Group routes
+router.get('/groups', groupController.fetchGroups);
 router.post('/groups', groupController.createGroup);
 router.get('/groups/:id', groupController.getGroup);
 
