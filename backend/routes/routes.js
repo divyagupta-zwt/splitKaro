@@ -8,7 +8,7 @@ router.post('/groups', groupController.createGroup);
 router.get('/groups/:id', groupController.getGroup);
 
 // Expense routes
-// router.post('/groups/:id/expenses', expenseController.addExpense);
+router.post('/groups/:id/expenses', expenseController.addExpense);
 router.get('/groups/:id/expenses', expenseController.getGroupExpenses);
 router.delete('/expenses/:id', expenseController.deleteExpense);
 
