@@ -4,11 +4,13 @@ import Dashboard from './pages/Dashboard';
 import AddExpense from './pages/AddExpense';
 import Expenses from './pages/Expenses';
 import NotFound from './pages/NotFound';
-import './App.css';
+import SettleUp from './pages/SettleUp';
+import { GroupProvider } from './hooks/GroupContext';
 
 function App() {
   return (
-    <Router>
+    <GroupProvider>
+      <Router>
       <div className="app">
         <Navbar />
         <main className="main-content">
@@ -16,11 +18,13 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/add-expense" element={<AddExpense />} />
             <Route path="/expenses" element={<Expenses />} />
+            <Route path='/settle' element={<SettleUp />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
       </div>
     </Router>
+    </GroupProvider>
   );
 }
 

@@ -7,6 +7,7 @@ const api = axios.create({
   }
 });
 
+export const getGroups= ()=> api.get('/groups');
 export const getGroup = (id) => api.get(`/groups/${id}`);
 export const createGroup = (data) => api.post('/groups', data);
 

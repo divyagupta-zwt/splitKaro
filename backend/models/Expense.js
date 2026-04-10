@@ -45,7 +45,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATEONLY,
       allowNull: false,
       validate: {
-        isDate: { msg: 'Must be a valid date' }
+        isDate: { msg: 'Invalid date' }
       }
     }
   }, {
