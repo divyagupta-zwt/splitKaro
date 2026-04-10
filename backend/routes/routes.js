@@ -18,8 +18,8 @@ router.delete('/expenses/:id', expenseController.deleteExpense);
 router.get('/groups/:id/balances', expenseController.getGroupBalances);
 
 // Settlement route
-// router.get('/groups/:id/settlements/suggest', settlementController);
-// router.post('/groups/:id/settlements', settlementController);
-// router.get('/groups/:id/settlements', settlementController);
+router.get('/groups/:id/settlements/suggest', settlementController.suggestSettlements);
+router.post('/groups/:id/settlements', settlementController.recordSettlements);
+router.get('/groups/:id/settlements', settlementController.getGroupSettlements);
 
 module.exports = router;

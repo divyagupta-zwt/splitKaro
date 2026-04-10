@@ -37,7 +37,7 @@ module.exports = {
     ]);
 
     await queryInterface.bulkInsert('expenses', [{
-      id: 3,
+      id: 2,
       group_id: 1,
       paid_by: 3,
       amount: 3650.00,
@@ -48,14 +48,14 @@ module.exports = {
       updatedAt: new Date()
     }]);
     await queryInterface.bulkInsert('expense_splits', [
-      { expense_id: 3, member_id: 1, amount_owed: 1100.00, createdAt: new Date(), updatedAt: new Date() },
-      { expense_id: 3, member_id: 2, amount_owed: 0.00, createdAt: new Date(), updatedAt: new Date() },
-      { expense_id: 3, member_id: 3, amount_owed: 1450.00, createdAt: new Date(), updatedAt: new Date() },
-      { expense_id: 3, member_id: 4, amount_owed: 1100.00, createdAt: new Date(), updatedAt: new Date() }
+      { expense_id: 2, member_id: 1, amount_owed: 1100.00, createdAt: new Date(), updatedAt: new Date() },
+      { expense_id: 2, member_id: 2, amount_owed: 0.00, createdAt: new Date(), updatedAt: new Date() },
+      { expense_id: 2, member_id: 3, amount_owed: 1450.00, createdAt: new Date(), updatedAt: new Date() },
+      { expense_id: 2, member_id: 4, amount_owed: 1100.00, createdAt: new Date(), updatedAt: new Date() }
     ]);
 
     await queryInterface.bulkInsert('expenses', [{
-      id: 4,
+      id: 3,
       group_id: 1,
       paid_by: 1,
       amount: 1200.00,
@@ -67,10 +67,10 @@ module.exports = {
     }]);
 
     await queryInterface.bulkInsert('expense_splits', [
-      { expense_id: 4, member_id: 1, amount_owed: 360.00, createdAt: new Date(), updatedAt: new Date() },
-      { expense_id: 4, member_id: 2, amount_owed: 360.00, createdAt: new Date(), updatedAt: new Date() },
-      { expense_id: 4, member_id: 3, amount_owed: 300.00, createdAt: new Date(), updatedAt: new Date() },
-      { expense_id: 4, member_id: 4, amount_owed: 180.00, createdAt: new Date(), updatedAt: new Date() }
+      { expense_id: 3, member_id: 1, amount_owed: 360.00, createdAt: new Date(), updatedAt: new Date() },
+      { expense_id: 3, member_id: 2, amount_owed: 360.00, createdAt: new Date(), updatedAt: new Date() },
+      { expense_id: 3, member_id: 3, amount_owed: 300.00, createdAt: new Date(), updatedAt: new Date() },
+      { expense_id: 3, member_id: 4, amount_owed: 180.00, createdAt: new Date(), updatedAt: new Date() }
     ]);
   },
 

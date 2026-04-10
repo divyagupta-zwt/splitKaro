@@ -1,4 +1,4 @@
-const {Group, Member, sequelize, Expense, ExpenseSplit} = require("../models");
+const {Group, Member, sequelize, Expense, ExpenseSplit, Settlement} = require("../models");
 
 const abort = async (t, res, status, msg) => {
   await t.rollback();
@@ -112,18 +112,27 @@ exports.getGroupBalances = async (req, res) => {
     include: { model: ExpenseSplit, as: "splits" },
   });
 
-  const balances = group.members.map((m) => {
-    const paid = expenses.filter((e) => e.paid_by === m.id).reduce((s, e) => s + parseFloat(e.amount), 0);
+  const settlements= await Settlement.findAll({
+    where: {group_id: req.params.id}
+  });
 
-    const owed = expenses.reduce((s, e) => {
+  const balances = group.members.map((m) => {
+    const totalPaid = expenses.filter((e) => e.paid_by === m.id).reduce((s, e) => s + parseFloat(e.amount), 0);
+
+    const totalOwed = expenses.reduce((s, e) => {
       const sp = e.splits.find((x) => x.member_id === m.id);
       return s + (sp ? parseFloat(sp.amount_owed) : 0);
     }, 0);
 
+    const settlementsPaid= settlements.filter((s)=>s.paid_by=== m.id).reduce((sum, s)=> sum + parseFloat(s.amount), 0);
+    const settlementsReceived= settlements.filter((s)=> s.paid_to=== m.id).reduce((sum, s)=> sum + parseFloat(s.amount), 0);
+
+    const balance= totalPaid - (totalOwed) + settlementsPaid - (settlementsReceived);
+
     return {
       member_id: m.id,
       name: m.name,
-      balance: parseFloat((paid - owed).toFixed(2)),
+      balance: parseFloat(balance.toFixed(2)),
     };
   });
 
