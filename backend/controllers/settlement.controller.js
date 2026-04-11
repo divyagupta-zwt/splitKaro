@@ -23,7 +23,7 @@ exports.suggestSettlements= async(req, res)=>{
         const settlementsPaid= settlements.filter((s)=> s.paid_by === m.id).reduce((sum, s)=> sum + parseFloat(s.amount), 0);
         const settlementsReceived= settlements.filter((s)=> s.paid_to=== m.id).reduce((sum, s)=> sum + parseFloat(s.amount), 0);
 
-        const netBalance= (totalPaid - totalOwed) + settlementsReceived - settlementsPaid;
+        const netBalance= totalPaid - (totalOwed) + settlementsPaid - settlementsReceived;
 
         return {
             id: m.id,
@@ -33,13 +33,13 @@ exports.suggestSettlements= async(req, res)=>{
     });
 
     const creditors= balances.filter((m)=> m.balance > 0).sort((a, b)=> b.balance - a.balance);
-    const debitors= balances.filter((m)=> m.balance < 0).map(...m=>{Math.abs(m.balance)}).sort((a,b)=> b.balance - a.balance);
+    const debitors= balances.filter((m)=> m.balance < 0).map(m=>({...m, balance: Math.abs(m.balance)})).sort((a,b)=> b.balance - a.balance);    
 
     let i=0, j=0;
     let suggestions= [];
     while(i < debitors.length && j < creditors.length){
         const d= debitors[i];
-        const c= creditors[i];
+        const c= creditors[j];
         const amount= Math.min(d.balance, c.balance);
 
         if(amount > 0){
@@ -89,7 +89,7 @@ exports.recordSettlements= async(req, res)=>{
         const settlementsPaid= settlements.filter((s)=> s.paid_by=== memberId).reduce((sum, s)=> sum + parseFloat(s.amount), 0);
         const settlementsReceived= settlements.filter((s)=> s.paid_to === memberId).reduce((sum, s)=> sum + parseFloat(s.amount), 0);
 
-        const netBalance= (totalPaid - totalOwed) + settlementsReceived - settlementsPaid;
+        const netBalance= totalPaid - (totalOwed) + settlementsPaid - settlementsReceived;
         return netBalance;
     };
 

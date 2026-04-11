@@ -12,7 +12,7 @@ const CURRENT_USER_ID = 1;
 function Expenses() {
   const { selectedGroupId } = useSelectedGroup();
   const { members } = useGroup(selectedGroupId);
-  const { expenses, loading, refetch: refetchExpenses } = useExpenses(selectedGroupId);
+  const { expenses, refetch: refetchExpenses } = useExpenses(selectedGroupId);
   const { refetch: refetchBalances } = useBalances(selectedGroupId);
   const [deleting, setDeleting] = useState(null);
   const [showConfirm, setShowConfirm] = useState(null);
@@ -50,7 +50,6 @@ function Expenses() {
       <ExpensesTable
         expenses={expenses}
         members={members}
-        loading={loading}
         currentUserId={CURRENT_USER_ID}
         onDelete={handleDelete}
         showDelete={true}

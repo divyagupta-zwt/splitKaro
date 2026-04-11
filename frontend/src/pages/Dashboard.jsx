@@ -7,6 +7,8 @@ import  useBalances from '../hooks/useBalances';
 import useGroup  from '../hooks/useGroup';
 import { useSelectedGroup } from '../hooks/GroupContext';
 import { getGroups } from '../services/api';
+import SettlementSection from '../components/SettlementSection';
+import useSettlements from '../hooks/useSettlements';
 
 const current_user = 1;
 
@@ -16,12 +18,17 @@ function Dashboard() {
   const [groups, setGroups] = useState([]);
   
   const { group, members } = useGroup(selectedGroupId);
-  const { expenses, loading: expLoading } = useExpenses(selectedGroupId);
+  const { expenses } = useExpenses(selectedGroupId);
   const { balances } = useBalances(selectedGroupId);
+  const {suggestions}= useSettlements(selectedGroupId);
 
   useEffect(() => {
     getGroups().then(res => setGroups(res.data)).catch(console.error);
   }, []);
+
+  const handleSettleUp= (suggestion)=>{
+    navigate('/settle', {state: {suggestion}});
+  };
 
   return (
     <div className='p-2'>
@@ -53,12 +60,13 @@ function Dashboard() {
         <BalanceCards balances={balances} />
       </div>
 
+      <SettlementSection suggestions={suggestions} onSettleUp={handleSettleUp} />
+
       <div>
         <h2 className="text-lg font-semibold mb-3">Recent Expenses</h2>
         <ExpensesTable
           expenses={expenses}
           members={members}
-          loading={expLoading}
           currentUserId={current_user}
         />
       </div>

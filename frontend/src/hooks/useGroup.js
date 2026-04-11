@@ -10,7 +10,6 @@ const useGroup=(id)=>{
         const res= await getGroup(id);
         setGroup(res.data);
         setMembers(res.data.members || []);
-        console.log(res.data.members)
     }, [id]);
 
     useEffect(()=>{

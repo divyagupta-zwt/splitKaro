@@ -1,21 +1,21 @@
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 const Navbar = () => {
   return (
     <div className="bg-blue-300">
       <ul className="flex justify-around items-center list-none py-6">
         <li className="font-bold text-4xl">splitKaro</li>
-        <li className="font-semibold">
-          <Link to="/">Dashboard</Link>
+        <li>
+          <NavLink to="/" className={({isActive})=> isActive ? 'font-bold underline decoration-2' : 'font-medium'}>Dashboard</NavLink>
         </li>
-        <li className="font-semibold">
-          <Link to="/add-expense">Add Expense</Link>
+        <li>
+          <NavLink to="/add-expense" className={({isActive})=> isActive ? 'font-bold underline decoration-2' : 'font-medium'}>Add Expense</NavLink>
         </li>
-        <li className="font-semibold">
-          <Link to="/expenses">Expenses</Link>
+        <li>
+          <NavLink to="/expenses" className={({isActive})=> isActive ? 'font-bold underline decoration-2' : 'font-medium'}>Expenses</NavLink>
         </li>
-        <li className="font-semibold">
-            <Link to="/settle">Settle Up</Link>
+        <li>
+            <NavLink to="/settle" className={({isActive})=> isActive ? 'font-bold underline decoration-2' : 'font-medium'}>Settle Up</NavLink>
         </li>
       </ul>
     </div>

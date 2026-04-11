@@ -17,4 +17,8 @@ export const deleteExpense = (id) => api.delete(`/expenses/${id}`);
 
 export const getGroupBalances = (groupId) => api.get(`/groups/${groupId}/balances`);
 
+export const suggestSettlements= (groupId) => api.get(`/groups/${groupId}/settlements/suggest`);
+export const recordSettlements= (groupId, data) => api.post(`/groups/${groupId}/settlements`, data);
+export const getGroupSettlements= (groupId) => api.get(`/groups/${groupId}/settlements`);
+
 export default api;

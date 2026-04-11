@@ -10,8 +10,8 @@ router.get('/groups/:id', groupController.getGroup);
 router.post('/groups', groupController.createGroup);
 
 // Expense routes
-router.post('/groups/:id/expenses', expenseController.addExpense);
 router.get('/groups/:id/expenses', expenseController.getGroupExpenses);
+router.post('/groups/:id/expenses', expenseController.addExpense);
 router.delete('/expenses/:id', expenseController.deleteExpense);
 
 // Balance route

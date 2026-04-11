@@ -1,6 +1,4 @@
 function BalanceCards( {balances} ) {
-  console.log('bal:',balances);
-  
   const totalOwed = balances.filter(b => b.balance > 0).reduce((s, b) => s + b.balance, 0);
   const totalOwes = balances.filter(b => b.balance < 0).reduce((s, b) => s + Math.abs(b.balance), 0);
 
