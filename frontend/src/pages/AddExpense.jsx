@@ -2,11 +2,12 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import useGroup from "../hooks/useGroup";
-import addExpense from "../services/api";
+import {addExpense} from "../services/api";
 
 import { useSelectedGroup } from "../hooks/GroupContext";
 
 function AddExpense() {
+  
   const navigate = useNavigate();
   const { selectedGroupId } = useSelectedGroup();
   const { members } = useGroup(selectedGroupId);
@@ -20,7 +21,7 @@ function AddExpense() {
   });
 
   const [splits, setSplits] = useState({});
-  const [submitting, setSubmitting] = useState(false);
+  // const [submitting, setSubmitting] = useState(false);
 
   useMemo(() => {
     if (members.length > 0) {
@@ -97,7 +98,7 @@ function AddExpense() {
     e.preventDefault();
     if (!isFormValid) return;
 
-    setSubmitting(true);
+    // setSubmitting(true);
     const payload = {
       paid_by: parseInt(formData.paid_by),
       amount: parseFloat(formData.amount),
@@ -383,9 +384,9 @@ function AddExpense() {
           <button
             type="submit"
             className="bg-blue-600 text-white rounded px-4 py-2 text-sm hover:bg-blue-700 disabled:opacity-50"
-            disabled={!isFormValid || submitting}
+            disabled={!isFormValid}
           >
-            {submitting ? "Adding..." : "Add Expense"}
+            Add Expense
           </button>
         </div>
       </form>
