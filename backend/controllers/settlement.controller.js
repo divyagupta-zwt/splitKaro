@@ -68,8 +68,8 @@ exports.recordSettlements= async(req, res)=>{
         include: [{model: Member, as: 'members'}],
         transaction: t
     });
-    const payer= group.members.find((m)=> m.id=== paid_by);
-    const receiver= group.members.find((m)=> m.id === paid_to);
+    const payer= group.members.find((m)=> m.id=== Number(paid_by));
+    const receiver= group.members.find((m)=> m.id === Number(paid_to));
     const expenses= await Expense.findAll({
         where: {group_id: groupId},
         include: [{model: ExpenseSplit, as: 'splits'}],

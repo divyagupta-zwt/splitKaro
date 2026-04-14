@@ -11,15 +11,11 @@ npm install
 # Add environment variables
 ## Backend .env
 
-DB_USER=root
-DB_HOST=127.0.0.1
-DB_PASSWORD=your_db_password
-DB_NAME=split_karo
-PORT=3000
+copy the variables from .env.example into .env with your credentials
 
 ## Frontend .env
 
-VITE_API_URL=http://localhost:3000/api
+copy the variables from .env.example into .env with your credentials
 
 # Run migrations and seeders
 ## cd into backend
