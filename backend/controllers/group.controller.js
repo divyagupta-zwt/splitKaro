@@ -5,15 +5,6 @@ exports.createGroup = async (req, res) => {
   try {
     const { name, description, members } = req.body;
 
-    if (!name) {
-      await t.rollback();
-      return res.status(400).json({ error: "Group name is required" });
-    }
-    if (!members || !Array.isArray(members) || members.length === 0) {
-      await t.rollback();
-      return res.status(400).json({ error: "At least one member is required" });
-    }
-
     const group = await Group.create({ name, description }, { transaction: t });
 
     const memberRows = members.map((m) => ({
@@ -54,10 +45,6 @@ exports.getGroup = async (req, res) => {
       ],
     });
 
-    if (!group) {
-      return res.status(404).json({ error: "Group not found" });
-    }
-
     res.json(group);
   } catch (e) {
     console.error("Error: ", e.message);
@@ -69,8 +56,6 @@ exports.fetchGroups = async (req, res) => {
     const groups = await Group.findAll({
       order: [["createdAt", "DESC"]],
     });
-
-    if(!groups || groups.length===0) return res.status(404).json({error: 'No groups found!'});
 
     res.json(groups);
   } catch (e) {

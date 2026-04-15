@@ -7,6 +7,11 @@ const {
   sequelize,
 } = require("../models");
 
+const abort = async (t, res, status, msg) => {
+  await t.rollback();
+  return res.status(status).json({ error: msg });
+};
+
 exports.suggestSettlements = async (req, res) => {
   try {
     const groupId = req.params.id;
@@ -14,26 +19,14 @@ exports.suggestSettlements = async (req, res) => {
       include: [{ model: Member, as: "members" }],
     });
 
-    if (!group) return res.status(404).json({ error: "Group not found!" });
-
     const expenses = await Expense.findAll({
       where: { group_id: groupId },
       include: [{ model: ExpenseSplit, as: "splits" }],
     });
 
-    if (!expenses || expenses.length === 0)
-      return res
-        .status(400)
-        .json({ error: "No expenses available for this group" });
-
     const settlements = await Settlement.findAll({
       where: { group_id: groupId },
     });
-
-    if (!settlements || settlements.length === 0)
-      return res
-        .status(400)
-        .json({ error: "No settlements available for this group" });
 
     const balances = group.members.map((m) => {
       const totalPaid = expenses
@@ -104,15 +97,10 @@ exports.recordSettlements = async (req, res) => {
     const groupId = req.params.id;
     const { paid_by, paid_to, amount, date } = req.body;
 
-    if (!paid_by || !paid_to || !amount || !date)
-      return res.status(400).json({ error: "Required fields are missing" });
-
     const group = await Group.findByPk(groupId, {
       include: [{ model: Member, as: "members" }],
       transaction: t,
     });
-
-    if (!group) return res.status(404).json({ error: "Group not found!" });
 
     const payer = group.members.find((m) => m.id === Number(paid_by));
     const receiver = group.members.find((m) => m.id === Number(paid_to));
@@ -122,20 +110,10 @@ exports.recordSettlements = async (req, res) => {
       transaction: t,
     });
 
-    if (!expenses || expenses.length === 0)
-      return res
-        .status(400)
-        .json({ error: "No expenses available for this group" });
-
     const settlements = await Settlement.findAll({
       where: { group_id: groupId },
       transaction: t,
     });
-
-    if (!settlements || settlements.length === 0)
-      return res
-        .status(400)
-        .json({ error: "No settlements available for this group" });
 
     const calculateBalance = (memberId) => {
       const totalPaid = expenses
@@ -154,40 +132,26 @@ exports.recordSettlements = async (req, res) => {
         .reduce((sum, s) => sum + parseFloat(s.amount), 0);
 
       const netBalance =
-        totalPaid - totalOwed + settlementsPaid - settlementsReceived;
+        totalPaid - (totalOwed) + settlementsPaid - settlementsReceived;
       return netBalance;
     };
 
     const payerBalance = calculateBalance(payer.id);
     const receiverBalance = calculateBalance(receiver.id);
 
-    if (payerBalance >= 0) {
-      await t.rollback();
-      return res.status(400).json({ message: "Payer does not owe any money" });
-    }
-    if (receiverBalance <= 0) {
-      await t.rollback();
-      return res
-        .status(400)
-        .json({ message: "Receiver is not owed any money" });
-    }
+    if (payerBalance >= 0) return abort(t, res, 400, "Payer does not owe any money");
+    if (receiverBalance <= 0) return abort(t, res, 400, "Receiver is not owed any money");
 
     const maxPayerCanPay = Math.abs(payerBalance);
     const maxReceiverCanReceive = receiverBalance;
     // const maxPossible= Math.min(maxPayerCanPay, maxReceiverCanReceive);
 
-    if (parseFloat(amount) > maxPayerCanPay.toFixed(2)) {
-      await t.rollback();
-      return res.status(400).json({
-        message: `Cannot pay more than what payer owes: ${maxPayerCanPay.toFixed(2)}`,
-      });
-    }
-    if (parseFloat(amount) > maxReceiverCanReceive.toFixed(2)) {
-      await t.rollback();
-      return res.status(400).json({
-        message: `Cannot receive more than what is owed: ${maxReceiverCanReceive.toFixed(2)}`,
-      });
-    }
+    if (parseFloat(amount) > maxPayerCanPay.toFixed(2)) return abort(t, res, 400, {
+      message: `Cannot pay more than what is owed: ${maxPayerCanPay.toFixed(2)}`,
+    });
+    if (parseFloat(amount) > maxReceiverCanReceive.toFixed(2)) return abort(t, res, 400, {
+      message: `Cannot receive more than what is owed: ${maxReceiverCanReceive.toFixed(2)}`,
+    });
 
     const settlement = await Settlement.create(
       {
@@ -230,11 +194,6 @@ exports.getGroupSettlements = async (req, res) => {
         ["createdAt", "DESC"],
       ],
     });
-
-    if (!settlements || settlements.length === 0)
-      return res
-        .status(400)
-        .json({ error: "No settlements found for this group" });
 
     res.json(settlements);
   } catch (e) {

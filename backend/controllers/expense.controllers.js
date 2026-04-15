@@ -22,17 +22,8 @@ exports.addExpense = async (req, res) => {
       include: { model: Member, as: "members" },
       transaction: t,
     });
-    if (!group) return abort(t, res, 404, "Group not found");
 
     const members = group.members;
-    if (!members.some((m) => m.id === paid_by))
-      return abort(t, res, 400, "Invalid payer");
-
-    if (!amount || amount <= 0 || !description || !date)
-      return abort(t, res, 400, "Missing required fields");
-
-    if (!["equal", "exact", "percentage"].includes(split_type))
-      return abort(t, res, 400, "Invalid split type");
 
     const expense = await Expense.create(
       { group_id: groupId, paid_by, amount, description, split_type, date },
@@ -108,10 +99,6 @@ exports.getGroupExpenses = async (req, res) => {
       order: [["date", "DESC"]],
     });
 
-    if (!expenses || expenses.length === 0) {
-      return res.status(404).json({error: 'No expense found for this group'});
-    }
-
     res.json(expenses);
   } catch (e) {
     console.error("Error: ", e.message);
@@ -142,20 +129,14 @@ exports.getGroupBalances = async (req, res) => {
       include: { model: Member, as: "members" },
     });
 
-    if(!group) return res.status(404).json({error: 'Group not found'});
-
     const expenses = await Expense.findAll({
       where: { group_id: req.params.id },
       include: { model: ExpenseSplit, as: "splits" },
     });
 
-    if(!expenses || expenses.length===0) return res.status(404).json({error: 'No expenses found for this group'});
-
     const settlements = await Settlement.findAll({
       where: { group_id: req.params.id },
     });
-
-    if(!settlements || settlements.length===0) return res.status(404).json({error: 'No settlements found for this group'});
 
     const balances = group.members.map((m) => {
       const totalPaid = expenses
