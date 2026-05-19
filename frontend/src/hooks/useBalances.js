@@ -19,7 +19,7 @@ const useBalances=(groupId)=>{
             await fetchBalances(controller.signal);
         })();
         return () => controller.abort();
-    });
+    }, [groupId]);
 
     return {balances, refetch: fetchBalances};
 };

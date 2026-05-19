@@ -20,7 +20,7 @@ const useExpenses=(groupId)=>{
             await fetchExpenses(controller.signal);
         })();
         return () => controller.abort();
-    });
+    }, [groupId]);
 
     return {expenses, refetch: fetchExpenses};
 };

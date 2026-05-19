@@ -27,7 +27,7 @@ const useSettlements= (groupId)=> {
         })();
         
         return () => controller.abort();
-    });
+    }, [groupId]);
 
     return {suggestions, history, refresh: fetchData};
 };

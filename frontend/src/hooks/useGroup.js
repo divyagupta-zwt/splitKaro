@@ -21,7 +21,7 @@ const useGroup=(id)=>{
             await fetchGroup(controller.signal);
         })();
         return () => controller.abort();
-    });
+    }, [id]);
 
     return {group, members, refetch: fetchGroup};
 };
