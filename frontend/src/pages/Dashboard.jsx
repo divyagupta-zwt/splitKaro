@@ -10,7 +10,6 @@ import { getGroups } from '../services/api';
 import SettlementSection from '../components/SettlementSection';
 import useSettlements from '../hooks/useSettlements';
 
-const current_user = 1;
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -67,7 +66,7 @@ function Dashboard() {
         <ExpensesTable
           expenses={expenses}
           members={members}
-          currentUserId={current_user}
+          currentUserId={members?.[0]?.id || null}
         />
       </div>
     </div>

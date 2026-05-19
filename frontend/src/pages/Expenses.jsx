@@ -7,7 +7,6 @@ import { deleteExpense } from '../services/api';
 
 import { useSelectedGroup } from '../hooks/GroupContext';
 
-const CURRENT_USER_ID = 1;
 
 function Expenses() {
   const { selectedGroupId } = useSelectedGroup();
@@ -50,7 +49,7 @@ function Expenses() {
       <ExpensesTable
         expenses={expenses}
         members={members}
-        currentUserId={CURRENT_USER_ID}
+        currentUserId={members?.[0]?.id || null}
         onDelete={handleDelete}
         showDelete={true}
       />

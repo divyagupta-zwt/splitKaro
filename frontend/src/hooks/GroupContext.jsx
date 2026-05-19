@@ -5,7 +5,8 @@ const GroupContext = createContext();
 
 export function GroupProvider({ children }) {
   const [selectedGroupId, setSelectedGroupId] = useState(() => {
-    return localStorage.getItem('selectedGroupId') || '1';
+    const stored = localStorage.getItem('selectedGroupId');
+    return stored ? Number(stored) : 1;
   });
 
   useEffect(() => {

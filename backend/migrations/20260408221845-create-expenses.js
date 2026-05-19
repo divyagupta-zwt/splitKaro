@@ -56,9 +56,25 @@ module.exports = {
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')
       }
     });
+
+    await queryInterface.addIndex('expenses', ['paid_by'], {
+      name: 'idx_expenses_paid_by'
+    });
+
+    await queryInterface.addIndex('expenses', ['group_id'], {
+      name: 'idx_expenses_group_id'
+    });
+
+    await queryInterface.addIndex('expenses', ['id'], {
+      unique: true,
+      name: 'idx_expenses_id'
+    });
   },
 
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('expenses');
+    await queryInterface.removeIndex('expenses', 'idx_expenses_paid_by');
+    await queryInterface.removeIndex('expenses', 'idx_expenses_group_id');
+    await queryInterface.removeIndex('expenses', 'idx_expenses_id');
   }
 };

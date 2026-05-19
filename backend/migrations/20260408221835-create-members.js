@@ -47,9 +47,16 @@ module.exports = {
       unique: true,
       name: 'unique_email_per_group'
     });
+
+    await queryInterface.addIndex('members', ['id'], {
+      unique: true,
+      name: 'idx_members_id'
+    });
   },
 
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('members');
+    await queryInterface.removeIndex('members', 'unique_email_per_group');
+    await queryInterface.removeIndex('members', 'idx_members_id');
   }
 };

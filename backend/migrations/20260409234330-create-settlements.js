@@ -65,6 +65,10 @@ module.exports = {
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')
       }
     });
+
+    await queryInterface.addIndex('settlements', ['group_id'], {
+      name: 'idx_settlements_group_id'
+    });
   },
 
   async down (queryInterface, Sequelize) {
@@ -75,5 +79,6 @@ module.exports = {
      * await queryInterface.dropTable('users');
      */
     await queryInterface.dropTable('settlements');
+    await queryInterface.removeIndex('settlements', 'idx_settlements_group_id');
   }
 };

@@ -6,6 +6,22 @@ module.exports= {
     "database": process.env.DB_NAME,
     "host": process.env.DB_HOST,
     "dialect": "mysql",
-    "port": 3306
+    "port": process.env.DB_PORT
+  },
+  production: {
+    "username": 'production-db-user',
+    "password": 'production-db-password',
+    "database": 'production-db-name',
+    "host": 'production-db-host',
+    "dialect": "mysql",
+    "port": 'production-db-port'
+  },
+  test: {
+    "username": 'CI-db-user',
+    "password": 'CI-db-password',
+    "database": 'CI-db-name',
+    "host": 'CI-db-host',
+    "dialect": "mysql",
+    "port": 'CI-db-port'
   }
 }

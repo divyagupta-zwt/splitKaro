@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import useGroup from "../hooks/useGroup";
 import { recordSettlements } from "../services/api";
 import useSettlements from "../hooks/useSettlements";
+import dayjs from "dayjs";
 
 const SettleUp = () => {
   const navigate = useNavigate();
@@ -13,10 +14,10 @@ const SettleUp = () => {
   const { members } = useGroup(selectedGroupId);
   const suggestion = location.state?.suggestion;
   const [formData, setFormData] = useState({
-    paid_by: suggestion?.from?.id || "",
-    paid_to: suggestion?.to?.id || "",
+    paidBy: suggestion?.from?.id || "",
+    paidTo: suggestion?.to?.id || "",
     amount: suggestion?.amount || "",
-    date: new Date().toISOString().split("T")[0],
+    date: dayjs().format("YYYY-MM-DD")
   });
   const [error, setError] = useState("");
 
@@ -44,10 +45,10 @@ const SettleUp = () => {
             <div className="mb-4">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">Pending Settlements</h2>
               {suggestions.length === 0 ? (
-                <p className="text-sm text-gray-500 py-4 text-center">All done. No payments needed.</p>
+                <p className="text-md text-gray-500 py-4 text-center">All done. No settlements needed.</p>
               ) : (
                 <div>
-                  {suggestions.data.map((s, index) => (
+                  {suggestions.map((s, index) => (
                     <div key={index} className="flex items-center justify-between p-3 rounded-lg mb-2 border border-blue-50 bg-blue-50">
                       <span className="text-md">
                         <span className="font-semibold">{s.from.name}</span> pays <span className="font-semibold">{s.to.name}</span>
@@ -63,12 +64,12 @@ const SettleUp = () => {
             </div>
 
             <div className="mb-4">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">Settlement History</h2>
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">Recent Settlement History</h2>
               {history.length === 0 ? (
                 <p className="text-sm text-gray-500 py-4 text-center">No records yet.</p>
               ) : (
                 <div>
-                  {history.data.map((h, index) => (
+                  {history.map((h, index) => (
                     <div key={index} className="flex items-center justify-between p-3 rounded-lg mb-2 border border-gray-50 bg-gray-100">
                       <div className="flex flex-col">
                         <span className="text-md">
@@ -76,10 +77,7 @@ const SettleUp = () => {
                           <span className="font-semibold">{h.receiver?.name}</span>
                         </span>
                         <span className="text-sm text-gray-500">
-                          {new Date(h.date).toLocaleDateString(undefined, {
-                            day: "numeric",
-                            month: "short",
-                          })}
+                          {dayjs(h.date).format("DD MMM YYYY")}
                         </span>
                       </div>
                       <span className="text-md font-bold text-gray-600">₹{parseFloat(h.amount.toLocaleString())}</span>
@@ -99,9 +97,9 @@ const SettleUp = () => {
               <div>
                 <label className="block text-md font-semibold text-gray-700 mb-2">Payer</label>
                 <select
-                  value={formData.paid_by}
+                  value={formData.paidBy}
                   onChange={(e) =>
-                    setFormData({ ...formData, paid_by: e.target.value })
+                    setFormData({ ...formData, paidBy: e.target.value })
                   }
                   required
                   className="w-full rounded border border-gray-500 focus:ring-2 focus:ring-blue-500"
@@ -118,9 +116,9 @@ const SettleUp = () => {
               <div>
                 <label className="block text-md font-semibold text-gray-700 mb-2">Receiver</label>
                 <select
-                  value={formData.paid_to}
+                  value={formData.paidTo}
                   onChange={(e) =>
-                    setFormData({ ...formData, paid_to: e.target.value })
+                    setFormData({ ...formData, paidTo: e.target.value })
                   }
                   required
                   className="w-full rounded border border-gray-500 focus:ring-2 focus:ring-blue-500"

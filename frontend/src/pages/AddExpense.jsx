@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import useGroup from "../hooks/useGroup";
 import {addExpense} from "../services/api";
-
+import dayjs from "dayjs";
 import { useSelectedGroup } from "../hooks/GroupContext";
 
 function AddExpense() {
@@ -13,11 +13,11 @@ function AddExpense() {
   const { members } = useGroup(selectedGroupId);
 
   const [formData, setFormData] = useState({
-    paid_by: "",
+    paidBy: "",
     amount: "",
     description: "",
-    split_type: "equal",
-    date: new Date().toISOString().split("T")[0],
+    splitType: "equal",
+    date: dayjs().format("YYYY-MM-DD")
   });
 
   const [splits, setSplits] = useState({});
@@ -28,13 +28,13 @@ function AddExpense() {
       const initial = {};
       members.forEach((m) => {
         initial[m.id] =
-          formData.split_type === "percentage"
+          formData.splitType === "percentage"
             ? (100 / members.length).toFixed(2)
             : "";
       });
       setSplits(initial);
     }
-  }, [members, formData.split_type]);
+  }, [members, formData.splitType]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,18 +45,33 @@ function AddExpense() {
     setSplits((prev) => ({ ...prev, [memberId]: value }));
   };
 
-  const equalAmount = useMemo(() => {
+  const equalSplits = useMemo(() => {
     if (
-      formData.split_type !== "equal" ||
+      formData.splitType !== "equal" ||
       !formData.amount ||
       members.length === 0
     )
-      return 0;
-    return (parseFloat(formData.amount) / members.length).toFixed(2);
-  }, [formData.amount, formData.split_type, members]);
+      return {};
+    
+    const totalCents = Math.round(parseFloat(formData.amount) * 100);
+    const baseShareCents = Math.floor(totalCents / members.length);
+    let remainderCents = totalCents % members.length;
+    
+    const calculatedSplits = {};
+    members.forEach((m) => {
+      let memberCents = baseShareCents;
+      if (remainderCents > 0) {
+        memberCents += 1;
+        remainderCents -= 1;
+      }
+      calculatedSplits[m.id] = (memberCents / 100).toFixed(2);
+    });
+    
+    return calculatedSplits;
+  }, [formData.amount, formData.splitType, members]);
 
   const exactValidation = useMemo(() => {
-    if (formData.split_type !== "exact") return { sum: 0, valid: false };
+    if (formData.splitType !== "exact") return { sum: 0, valid: false };
     const sum = Object.values(splits).reduce(
       (s, v) => s + (parseFloat(v) || 0),
       0,
@@ -66,10 +81,10 @@ function AddExpense() {
       sum: Math.round(sum * 100) / 100,
       valid: Math.round(sum * 100) === Math.round(total * 100) && total > 0,
     };
-  }, [splits, formData.amount, formData.split_type]);
+  }, [splits, formData.amount, formData.splitType]);
 
   const percentageValidation = useMemo(() => {
-    if (formData.split_type !== "percentage") return { sum: 0, valid: false };
+    if (formData.splitType !== "percentage") return { sum: 0, valid: false };
     const sum = Object.values(splits).reduce(
       (s, v) => s + (parseFloat(v) || 0),
       0,
@@ -78,19 +93,19 @@ function AddExpense() {
       sum: Math.round(sum * 100) / 100,
       valid: Math.round(sum * 100) === 10000,
     };
-  }, [splits, formData.split_type]);
+  }, [splits, formData.splitType]);
 
   const isFormValid = useMemo(() => {
     if (
-      !formData.paid_by ||
+      !formData.paidBy ||
       !formData.amount ||
       !formData.description ||
       !formData.date
     )
       return false;
     if (parseFloat(formData.amount) <= 0) return false;
-    if (formData.split_type === "exact") return exactValidation.valid;
-    if (formData.split_type === "percentage") return percentageValidation.valid;
+    if (formData.splitType === "exact") return exactValidation.valid;
+    if (formData.splitType === "percentage") return percentageValidation.valid;
     return true;
   }, [formData, exactValidation, percentageValidation]);
 
@@ -100,14 +115,14 @@ function AddExpense() {
 
     // setSubmitting(true);
     const payload = {
-      paid_by: parseInt(formData.paid_by),
+      paidBy: parseInt(formData.paidBy),
       amount: parseFloat(formData.amount),
       description: formData.description,
-      split_type: formData.split_type,
+      splitType: formData.splitType,
       date: formData.date,
     };
 
-    if (formData.split_type !== "equal") {
+    if (formData.splitType !== "equal") {
       payload.splits = {};
       for (const [memberId, value] of Object.entries(splits)) {
         payload.splits[memberId] = parseFloat(value) || 0;
@@ -193,8 +208,8 @@ function AddExpense() {
                 Paid By
               </label>
               <select
-                name="paid_by"
-                value={formData.paid_by}
+                name="paidBy"
+                value={formData.paidBy}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-1.5 text-sm"
                 required
@@ -218,12 +233,12 @@ function AddExpense() {
                     key={type}
                     type="button"
                     className={`flex-1 text-sm py-1.5 rounded border ${
-                      formData.split_type === type
+                      formData.splitType === type
                         ? "bg-blue-600 text-white border-blue-600"
                         : "bg-white text-gray-600 hover:bg-gray-50"
                     }`}
                     onClick={() =>
-                      setFormData((prev) => ({ ...prev, split_type: type }))
+                      setFormData((prev) => ({ ...prev, splitType: type }))
                     }
                   >
                     {type === "equal"}
@@ -239,20 +254,20 @@ function AddExpense() {
           <div className="bg-white border rounded p-4">
             <h3 className="font-semibold mb-3">Split Details</h3>
 
-            {formData.split_type === "equal" && (
+            {formData.splitType === "equal" && (
               <div>
                 <p className="text-sm text-gray-500 mb-2">
                   Splitting equally among{" "}
                   <strong>{members.length} members</strong>
                 </p>
-                {formData.amount && (
+                {/* {formData.amount && (
                   <p className="text-xl font-bold mb-3">
                     ₹{equalAmount}{" "}
                     <span className="text-sm font-normal text-gray-400">
                       per person
                     </span>
                   </p>
-                )}
+                )} */}
                 <div className="space-y-2">
                   {members.map((m) => (
                     <div
@@ -261,7 +276,7 @@ function AddExpense() {
                     >
                       <span className="flex items-center gap-2">{m.name}</span>
                       <span className="text-gray-500">
-                        ₹{formData.amount ? equalAmount : "0.00"}
+                        ₹{formData.amount && equalSplits[m.id] ? equalSplits[m.id] : "0.00"}
                       </span>
                     </div>
                   ))}
@@ -269,7 +284,7 @@ function AddExpense() {
               </div>
             )}
 
-            {formData.split_type === "exact" && (
+            {formData.splitType === "exact" && (
               <div>
                 <p className="text-sm text-gray-500 mb-2">
                   Enter exact amounts
@@ -315,7 +330,7 @@ function AddExpense() {
               </div>
             )}
 
-            {formData.split_type === "percentage" && (
+            {formData.splitType === "percentage" && (
               <div>
                 <p className="text-sm text-gray-500 mb-2">
                   Enter percentage for each member

@@ -96,7 +96,7 @@ function ExpensesTable({ expenses, members, loading, currentUserId, onDelete, sh
               {filteredExpenses.map(expense => (
                 <tr key={expense.id} className="border-b border-gray-100" id={`expense-row-${expense.id}`}>
                   <td className="py-2 pr-3 text-gray-500">
-                    {new Date(expense.date).toLocaleDateString('en-IN', {
+                    {new Date(expense.date + 'T00:00:00').toLocaleDateString('en-IN', {
                       day: '2-digit', month: 'short', year: 'numeric'
                     })}
                   </td>

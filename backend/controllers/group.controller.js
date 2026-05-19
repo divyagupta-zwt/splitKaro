@@ -5,13 +5,13 @@ exports.createGroup = async (req, res) => {
   try {
     const { name, description, members } = req.body;
 
-    const group = await Group.create({ name, description }, { transaction: t });
+    const group = await Group.create({ name: name?.trim(), description: description?.trim() }, { transaction: t });
 
     const memberRows = members.map((m) => ({
       group_id: group.id,
-      name: m.name,
-      email: m.email,
-      phone: m.phone || null,
+      name: m.name?.trim(),
+      email: m.email?.trim(),
+      phone: m.phone?.trim() || null,
     }));
 
     await Member.bulkCreate(memberRows, {
@@ -27,8 +27,9 @@ exports.createGroup = async (req, res) => {
 
     res.status(201).json(createdGroup);
   } catch (e) {
-    await t.rollback();
+    if (t) await t.rollback();
     console.error("Error: ", e.message);
+    res.status(500).json({ error: e.message || 'Internal Server Error' });
   }
 };
 
@@ -48,6 +49,7 @@ exports.getGroup = async (req, res) => {
     res.json(group);
   } catch (e) {
     console.error("Error: ", e.message);
+    res.status(500).json({ error: e.message || 'Internal Server Error' });
   }
 };
 
@@ -60,5 +62,6 @@ exports.fetchGroups = async (req, res) => {
     res.json(groups);
   } catch (e) {
     console.error("Error: ", e.message);
+    res.status(500).json({ error: e.message || 'Internal Server Error' });
   }
 };

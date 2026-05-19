@@ -1,19 +1,25 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useCallback, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { getGroupBalances } from "../services/api";
 
 const useBalances=(groupId)=>{
     const [balances, setBalances]= useState([]);
 
-    const fetchBalances= useCallback(async()=>{
-        const res= await getGroupBalances(groupId);
-        const bal= res.data;
-        setBalances(bal);
-    },[groupId]);
+    const fetchBalances = async (signal) => {
+        try {
+            const res = await getGroupBalances(groupId, signal);
+            setBalances(res.data);
+        } catch (error) {
+            console.error("Failed to fetch balances:", error);
+        }
+    };
 
     useEffect(()=>{
-        fetchBalances();
-    }, [fetchBalances]);
+        const controller = new AbortController();
+        (async () => {
+            await fetchBalances(controller.signal);
+        })();
+        return () => controller.abort();
+    });
 
     return {balances, refetch: fetchBalances};
 };

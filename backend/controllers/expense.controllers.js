@@ -4,8 +4,8 @@ const {
   sequelize,
   Expense,
   ExpenseSplit,
-  Settlement,
 } = require("../models");
+const { calculateGroupBalances } = require("../utils/balanceCalculator");
 
 const abort = async (t, res, status, msg) => {
   await t.rollback();
@@ -16,7 +16,7 @@ exports.addExpense = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const groupId = req.params.id;
-    const { paid_by, amount, description, split_type, date, splits } = req.body;
+    const { paidBy, amount, description, splitType, date, splits } = req.body;
 
     const group = await Group.findByPk(groupId, {
       include: { model: Member, as: "members" },
@@ -26,52 +26,74 @@ exports.addExpense = async (req, res) => {
     const members = group.members;
 
     const expense = await Expense.create(
-      { group_id: groupId, paid_by, amount, description, split_type, date },
+      { group_id: groupId, paid_by: paidBy, amount, description, split_type: splitType, date },
       { transaction: t },
     );
 
     let splitRecords = [];
 
     // EQUAL
-    if (split_type === "equal") {
-      const share = parseFloat((amount / members.length).toFixed(2));
-      splitRecords = members.map((m) => ({
-        expense_id: expense.id,
-        member_id: m.id,
-        amount_owed: share,
-      }));
+    if (splitType === "equal") {
+      const totalCents = Math.round(amount * 100);
+      const baseShareCents = Math.floor(totalCents / members.length);
+      let remainderCents = totalCents % members.length;
+
+      splitRecords = members.map((m) => {
+        let memberCents = baseShareCents;
+        if (remainderCents > 0) {
+          memberCents += 1;
+          remainderCents -= 1;
+        }
+        return {
+          expense_id: expense.id,
+          member_id: m.id,
+          amount_owed: memberCents / 100,
+        };
+      });
     }
 
     // EXACT
-    if (split_type === "exact") {
-      const total = Object.values(splits || {}).reduce(
-        (a, b) => a + parseFloat(b),
-        0,
+    if (splitType === "exact") {
+      const totalCents = Object.values(splits || {}).reduce(
+        (sum, val) => sum + Math.round(parseFloat(val) * 100),
+        0
       );
-      if (parseFloat(total.toFixed(2)) !== parseFloat(amount))
+      if (totalCents !== Math.round(amount * 100))
         return abort(t, res, 400, "Invalid splits");
 
       splitRecords = Object.entries(splits).map(([id, val]) => ({
         expense_id: expense.id,
         member_id: id,
-        amount_owed: parseFloat(val),
+        amount_owed: Math.round(parseFloat(val) * 100) / 100,
       }));
     }
 
     // PERCENTAGE
-    if (split_type === "percentage") {
-      const totalPercent = Object.values(splits || {}).reduce(
-        (a, b) => a + parseFloat(b),
-        0,
+    if (splitType === "percentage") {
+      const totalPercentCents = Object.values(splits || {}).reduce(
+        (sum, p) => sum + Math.round(parseFloat(p) * 100),
+        0
       );
-      if (parseFloat(totalPercent) !== 100)
+      if (totalPercentCents !== 10000)
         return abort(t, res, 400, "Percent must be 100");
 
-      splitRecords = Object.entries(splits).map(([id, p]) => ({
-        expense_id: expense.id,
-        member_id: id,
-        amount_owed: parseFloat(((p / 100) * amount).toFixed(2)),
-      }));
+      const totalCents = Math.round(amount * 100);
+      let distributedCents = 0;
+
+      splitRecords = Object.entries(splits).map(([id, p]) => {
+        const shareCents = Math.round((parseFloat(p) / 100) * totalCents);
+        distributedCents += shareCents;
+        return {
+          expense_id: expense.id,
+          member_id: id,
+          amount_owed: shareCents / 100,
+        };
+      });
+
+      const diffCents = totalCents - distributedCents;
+      if (diffCents !== 0 && splitRecords.length > 0) {
+        splitRecords[0].amount_owed = (Math.round(splitRecords[0].amount_owed * 100) + diffCents) / 100;
+      }
     }
 
     await ExpenseSplit.bulkCreate(splitRecords, { transaction: t });
@@ -79,8 +101,9 @@ exports.addExpense = async (req, res) => {
 
     res.status(201).json({ message: "Expense added", expense_id: expense.id });
   } catch (e) {
-    await t.rollback();
+    if (t) await t.rollback();
     console.error("Error: ", e.message);
+    res.status(500).json({ error: e.message || 'Internal Server Error' });
   }
 };
 
@@ -102,71 +125,36 @@ exports.getGroupExpenses = async (req, res) => {
     res.json(expenses);
   } catch (e) {
     console.error("Error: ", e.message);
+    res.status(500).json({ error: e.message || 'Internal Server Error' });
   }
 };
 
 exports.deleteExpense = async (req, res) => {
   const t = await sequelize.transaction();
   try {
-    await ExpenseSplit.destroy({
-      where: { expense_id: req.params.id },
-      transaction: t,
-    });
+    // await ExpenseSplit.destroy({
+    //   where: { expense_id: req.params.id },
+    //   transaction: t,
+    // });
 
     await Expense.destroy({ where: { id: req.params.id }, transaction: t });
     await t.commit();
 
     res.json({ message: "Deleted" });
   } catch (e) {
-    await t.rollback();
+    if (t) await t.rollback();
     console.log("Error: ", e.message);
+    res.status(500).json({ error: e.message || 'Internal Server Error' });
   }
 };
 
 exports.getGroupBalances = async (req, res) => {
   try {
-    const group = await Group.findByPk(req.params.id, {
-      include: { model: Member, as: "members" },
-    });
-
-    const expenses = await Expense.findAll({
-      where: { group_id: req.params.id },
-      include: { model: ExpenseSplit, as: "splits" },
-    });
-
-    const settlements = await Settlement.findAll({
-      where: { group_id: req.params.id },
-    });
-
-    const balances = group.members.map((m) => {
-      const totalPaid = expenses
-        .filter((e) => e.paid_by === m.id)
-        .reduce((s, e) => s + parseFloat(e.amount), 0);
-
-      const totalOwed = expenses.reduce((s, e) => {
-        const sp = e.splits.find((x) => x.member_id === m.id);
-        return s + (sp ? parseFloat(sp.amount_owed) : 0);
-      }, 0);
-
-      const settlementsPaid = settlements
-        .filter((s) => s.paid_by === m.id)
-        .reduce((sum, s) => sum + parseFloat(s.amount), 0);
-      const settlementsReceived = settlements
-        .filter((s) => s.paid_to === m.id)
-        .reduce((sum, s) => sum + parseFloat(s.amount), 0);
-
-      const balance =
-        totalPaid - totalOwed + settlementsPaid - settlementsReceived;
-
-      return {
-        member_id: m.id,
-        name: m.name,
-        balance: parseFloat(balance.toFixed(2)),
-      };
-    });
+    const balances = await calculateGroupBalances(req.params.id);
 
     res.json(balances);
   } catch (e) {
     console.error("Error: ", e.message);
+    res.status(500).json({ error: e.message || 'Internal Server Error' });
   }
 };

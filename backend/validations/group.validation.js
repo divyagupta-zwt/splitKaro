@@ -17,6 +17,5 @@ exports.validateGetGroup= async(req, res, next)=>{
 
 exports.validateFetchGroups= async(req, res, next)=>{
     const groups= await Group.findAll();
-    if(!groups || groups.length===0) return res.status(404).json({error: 'No groups found!'});
     next();
 }
