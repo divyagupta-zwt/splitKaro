@@ -11,6 +11,10 @@ const useGroup=(id)=>{
             setGroup(res.data);
             setMembers(res.data.members || []);
         } catch (error) {
+            // Ignore cancellations (AbortController / axios cancellation)
+            if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || String(error?.message).toLowerCase().includes('canceled') || String(error?.message).toLowerCase().includes('aborted')) {
+                return;
+            }
             console.error("Failed to fetch group:", error);
         }
     };

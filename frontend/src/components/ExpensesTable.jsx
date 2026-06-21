@@ -74,12 +74,44 @@ function ExpensesTable({ expenses, members, loading, currentUserId, onDelete, sh
         </select>
       </div>
 
+      {/* Mobile card view (shown on small screens) */}
+      <div className="md:hidden">
+        {filteredExpenses.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">📭 No expenses found</div>
+        ) : (
+          <div className="flex flex-col">
+            {filteredExpenses.map(expense => (
+              <div key={expense.id} className="bg-white border rounded p-3 mb-3 shadow-sm">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <div className="text-sm font-medium">{expense.description}</div>
+                    <div className="text-xs text-gray-500">{new Date(expense.date + 'T00:00:00').toLocaleDateString('en-IN')}</div>
+                  </div>
+                  <div className="text-sm font-semibold">₹{parseFloat(expense.amount).toFixed(2)}</div>
+                </div>
+
+                <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                  <div>Paid by: <span className="font-medium text-gray-800">{expense.payer?.name}</span></div>
+                  <div className={`text-xs px-2 py-0.5 rounded ${badgeColors[expense.split_type] || ''}`}>{expense.split_type}</div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">Your Share: <span className="font-semibold">{getUserShare(expense)}</span></div>
+                  {showDelete && (
+                    <button onClick={() => onDelete(expense.id)} className="text-red-500 text-xs hover:text-red-700">Delete</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop/tablet view (md and up) */}
       {filteredExpenses.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">
-          📭 No expenses found
-        </div>
+        <div className="text-center py-8 text-gray-400 hidden md:block">📭 No expenses found</div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto hidden md:block">
           <table className="w-full text-sm" id="expenses-table">
             <thead>
               <tr className="border-b text-left text-gray-500">

@@ -9,19 +9,19 @@ module.exports= {
     "port": process.env.DB_PORT
   },
   production: {
-    "username": 'production-db-user',
-    "password": 'production-db-password',
-    "database": 'production-db-name',
-    "host": 'production-db-host',
+    "username": process.env.DB_USER,
+    "password": process.env.DB_PASSWORD,
+    "database": process.env.DB_NAME,
+    "host": process.env.DB_HOST,
     "dialect": "mysql",
-    "port": 'production-db-port'
+    "port": process.env.DB_PORT
   },
   test: {
-    "username": 'CI-db-user',
-    "password": 'CI-db-password',
-    "database": 'CI-db-name',
-    "host": 'CI-db-host',
+    "username": process.env.TEST_DB_USER || 'CI-db-user',
+    "password": process.env.TEST_DB_PASSWORD || 'CI-db-password',
+    "database": process.env.TEST_DB_NAME || 'CI-db-name',
+    "host": process.env.TEST_DB_HOST || 'CI-db-host',
     "dialect": "mysql",
-    "port": 'CI-db-port'
+    "port": process.env.TEST_DB_PORT || 'CI-db-port'
   }
 }

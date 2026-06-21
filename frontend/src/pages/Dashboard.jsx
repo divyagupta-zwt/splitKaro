@@ -20,13 +20,24 @@ function Dashboard() {
   const { expenses } = useExpenses(selectedGroupId);
   const { balances } = useBalances(selectedGroupId);
   const {suggestions}= useSettlements(selectedGroupId);
+  const [navigating, setNavigating] = useState(false);
+  const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null') : null;
+  const currentMember = members?.find(m => m.user_id === currentUser?.id) || members?.find(m => String(m.id) === String(currentUser?.id));
+  const currentMemberId = currentMember?.id;
 
   useEffect(() => {
     getGroups().then(res => setGroups(res.data)).catch(console.error);
   }, []);
 
   const handleSettleUp= (suggestion)=>{
+    if (!currentMemberId || String(suggestion.from.id) !== String(currentMemberId)) {
+      // ignore attempts to navigate if payer isn't the logged-in member
+      return;
+    }
+    setNavigating(true);
     navigate('/settle', {state: {suggestion}});
+    // small timeout to reset navigating if route change doesn't unmount immediately
+    setTimeout(()=>setNavigating(false), 500);
   };
 
   return (
@@ -59,7 +70,7 @@ function Dashboard() {
         <BalanceCards balances={balances} />
       </div>
 
-      <SettlementSection suggestions={suggestions} onSettleUp={handleSettleUp} />
+      <SettlementSection suggestions={suggestions} onSettleUp={handleSettleUp} currentMemberId={currentMemberId} navigating={navigating} />
 
       <div>
         <h2 className="text-lg font-semibold mb-3">Recent Expenses</h2>

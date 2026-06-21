@@ -1,18 +1,30 @@
 const { Group, Member, sequelize } = require("../models");
 
-exports.createGroup = async (req, res) => {
+exports.createGroup = async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
     const { name, description, members } = req.body;
 
     const group = await Group.create({ name: name?.trim(), description: description?.trim() }, { transaction: t });
 
+    const creatorEmail = req.user.email.toLowerCase().trim();
+    const hasCreator = members.some(m => m.email?.toLowerCase().trim() === creatorEmail);
+
     const memberRows = members.map((m) => ({
       group_id: group.id,
       name: m.name?.trim(),
-      email: m.email?.trim(),
+      email: m.email?.trim().toLowerCase(),
       phone: m.phone?.trim() || null,
     }));
+
+    if (!hasCreator) {
+      memberRows.unshift({
+        group_id: group.id,
+        name: req.user.name,
+        email: creatorEmail,
+        phone: null
+      });
+    }
 
     await Member.bulkCreate(memberRows, {
       transaction: t,
@@ -27,41 +39,33 @@ exports.createGroup = async (req, res) => {
 
     res.status(201).json(createdGroup);
   } catch (e) {
-    if (t) await t.rollback();
-    console.error("Error: ", e.message);
-    res.status(500).json({ error: e.message || 'Internal Server Error' });
+    if (t && !t.finished) await t.rollback();
+    next(e);
   }
 };
 
-exports.getGroup = async (req, res) => {
+exports.getGroup = async (req, res, next) => {
   try {
-    const group = await Group.findByPk(req.params.id, {
-      attributes: ["id", "name", "description"],
-      include: [
-        {
-          model: Member,
-          as: "members",
-          attributes: ["id", "group_id", "name", "email", "phone"],
-        },
-      ],
-    });
-
-    res.json(group);
+    res.json(req.group);
   } catch (e) {
-    console.error("Error: ", e.message);
-    res.status(500).json({ error: e.message || 'Internal Server Error' });
+    next(e);
   }
 };
 
-exports.fetchGroups = async (req, res) => {
+exports.fetchGroups = async (req, res, next) => {
   try {
     const groups = await Group.findAll({
+      include: [{
+        model: Member,
+        as: "members",
+        where: { email: req.user.email },
+        attributes: []
+      }],
       order: [["createdAt", "DESC"]],
     });
 
     res.json(groups);
   } catch (e) {
-    console.error("Error: ", e.message);
-    res.status(500).json({ error: e.message || 'Internal Server Error' });
+    next(e);
   }
 };

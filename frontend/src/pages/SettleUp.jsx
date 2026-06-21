@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelectedGroup } from "../hooks/GroupContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import useGroup from "../hooks/useGroup";
@@ -12,6 +12,14 @@ const SettleUp = () => {
   const { selectedGroupId } = useSelectedGroup();
   const { suggestions, history } = useSettlements(selectedGroupId);
   const { members } = useGroup(selectedGroupId);
+  const [currentUser] = useState(() => {
+    try {
+      return typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null') : null;
+    } catch (err) {
+      return null;
+    }
+  });
+  const [currentMemberId, setCurrentMemberId] = useState("");
   const suggestion = location.state?.suggestion;
   const [formData, setFormData] = useState({
     paidBy: suggestion?.from?.id || "",
@@ -24,13 +32,28 @@ const SettleUp = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    // Client-side guard: only allow current user to be the payer
+    if (String(formData.paidBy) !== String(currentMemberId)) {
+      setError('You can only record payments made by your account.');
+      return;
+    }
     try {
       await recordSettlements(selectedGroupId, formData);
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (e) {
       setError(e.response?.data?.error || "Failed to record settlement");
     }
   };
+
+  useEffect(() => {
+    if (!members || !currentUser) return;
+    const member = members.find(m => m.user_id === currentUser.id) || members.find(m => m.id === currentUser.id);
+    if (member) {
+      setCurrentMemberId(member.id);
+      // if suggestion or existing formData doesn't conflict, set payer to current member
+      setFormData(fd => ({ ...fd, paidBy: fd.paidBy || member.id }));
+    }
+  }, [members, currentUser]);
 
   return (
     <div>
@@ -40,8 +63,8 @@ const SettleUp = () => {
           <p className="text-sm text-gray-500">Record payments between members to clear debts</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-10 mb-3 p-2">
-          <div className="flex flex-col gap-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-3 p-2">
+          <div className="flex flex-col gap-6">
             <div className="mb-4">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">Pending Settlements</h2>
               {suggestions.length === 0 ? (
@@ -53,10 +76,23 @@ const SettleUp = () => {
                       <span className="text-md">
                         <span className="font-semibold">{s.from.name}</span> pays <span className="font-semibold">{s.to.name}</span>
                       </span>
-                      <span className="text-md font-bold text-blue-700">₹{s.amount.toLocaleString()}</span>
-                      {/* <span>
-                        <button>Record</button>
-                    </span> */}
+                      <div className="flex items-center gap-4">
+                        <span className="text-md font-bold text-blue-700">₹{s.amount.toLocaleString()}</span>
+                        {String(currentMemberId) === String(s.from.id) ? (
+                          <button
+                            className="text-sm bg-blue-600 text-white px-3 py-1 rounded"
+                            onClick={() => {
+                              setFormData({ paidBy: s.from.id, paidTo: s.to.id, amount: s.amount, date: dayjs().format('YYYY-MM-DD') });
+                              // focus the form submit (scroll into view)
+                              document.getElementById('record-settlement-form')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                          >
+                            Record
+                          </button>
+                        ) : (
+                          <button className="text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded cursor-not-allowed" disabled>Record</button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -80,7 +116,7 @@ const SettleUp = () => {
                           {dayjs(h.date).format("DD MMM YYYY")}
                         </span>
                       </div>
-                      <span className="text-md font-bold text-gray-600">₹{parseFloat(h.amount.toLocaleString())}</span>
+                      <span className="text-md font-bold text-gray-600">₹{Number(h.amount).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                     </div>
                   ))}
                 </div>
@@ -90,27 +126,42 @@ const SettleUp = () => {
 
           <div className="mb-4">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">Record Settlement</h2>
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            <form id="record-settlement-form" onSubmit={handleSubmit} className="p-6 space-y-6 bg-white rounded shadow-sm">
             {error && <div className="text-sm text-red-500">{error}</div>}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-md font-semibold text-gray-700 mb-2">Payer</label>
-                <select
-                  value={formData.paidBy}
-                  onChange={(e) =>
-                    setFormData({ ...formData, paidBy: e.target.value })
-                  }
-                  required
-                  className="w-full rounded border border-gray-500 focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Payer</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
+                {currentMemberId ? (
+                  <select
+                    value={formData.paidBy}
+                    onChange={(e) => setFormData({ ...formData, paidBy: e.target.value })}
+                    required
+                    disabled
+                    className="w-full rounded border border-gray-300 bg-gray-100 cursor-not-allowed"
+                  >
+                    <option value="">Select Payer</option>
+                    {members.filter(m => String(m.id) === String(currentMemberId)).map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <select
+                    value={formData.paidBy}
+                    onChange={(e) => setFormData({ ...formData, paidBy: e.target.value })}
+                    required
+                    className="w-full rounded border border-gray-500 focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Payer</option>
+                    {members.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
@@ -124,17 +175,19 @@ const SettleUp = () => {
                   className="w-full rounded border border-gray-500 focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Receiver</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
+                  {(members || [])
+                    .filter(m => String(m.id) !== String(currentMemberId))
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
                 </select>
               </div>
             </div>
 
             <div>
-              <div className="mb-6">
+              <div className="mb-4">
                 <label className="block text-md font-semibold text-gray-700 mb-2">Amount</label>
                 <input
                   type="number"

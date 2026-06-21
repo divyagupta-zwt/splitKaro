@@ -12,7 +12,7 @@ const abort = async (t, res, status, msg) => {
   return res.status(status).json({ error: msg });
 };
 
-exports.addExpense = async (req, res) => {
+exports.addExpense = async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
     const groupId = req.params.id;
@@ -63,7 +63,7 @@ exports.addExpense = async (req, res) => {
 
       splitRecords = Object.entries(splits).map(([id, val]) => ({
         expense_id: expense.id,
-        member_id: id,
+        member_id: parseInt(id, 10),
         amount_owed: Math.round(parseFloat(val) * 100) / 100,
       }));
     }
@@ -85,7 +85,7 @@ exports.addExpense = async (req, res) => {
         distributedCents += shareCents;
         return {
           expense_id: expense.id,
-          member_id: id,
+          member_id: parseInt(id, 10),
           amount_owed: shareCents / 100,
         };
       });
@@ -101,13 +101,12 @@ exports.addExpense = async (req, res) => {
 
     res.status(201).json({ message: "Expense added", expense_id: expense.id });
   } catch (e) {
-    if (t) await t.rollback();
-    console.error("Error: ", e.message);
-    res.status(500).json({ error: e.message || 'Internal Server Error' });
+    if (t && !t.finished) await t.rollback();
+    next(e);
   }
 };
 
-exports.getGroupExpenses = async (req, res) => {
+exports.getGroupExpenses = async (req, res, next) => {
   try {
     const expenses = await Expense.findAll({
       where: { group_id: req.params.id },
@@ -124,37 +123,29 @@ exports.getGroupExpenses = async (req, res) => {
 
     res.json(expenses);
   } catch (e) {
-    console.error("Error: ", e.message);
-    res.status(500).json({ error: e.message || 'Internal Server Error' });
+    next(e);
   }
 };
 
-exports.deleteExpense = async (req, res) => {
+exports.deleteExpense = async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
-    // await ExpenseSplit.destroy({
-    //   where: { expense_id: req.params.id },
-    //   transaction: t,
-    // });
-
     await Expense.destroy({ where: { id: req.params.id }, transaction: t });
     await t.commit();
 
     res.json({ message: "Deleted" });
   } catch (e) {
-    if (t) await t.rollback();
-    console.log("Error: ", e.message);
-    res.status(500).json({ error: e.message || 'Internal Server Error' });
+    if (t && !t.finished) await t.rollback();
+    next(e);
   }
 };
 
-exports.getGroupBalances = async (req, res) => {
+exports.getGroupBalances = async (req, res, next) => {
   try {
     const balances = await calculateGroupBalances(req.params.id);
 
     res.json(balances);
   } catch (e) {
-    console.error("Error: ", e.message);
-    res.status(500).json({ error: e.message || 'Internal Server Error' });
+    next(e);
   }
 };

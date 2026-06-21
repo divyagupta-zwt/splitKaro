@@ -11,7 +11,7 @@ const abort = async (t, res, status, msg) => {
   return res.status(status).json({ error: msg });
 };
 
-exports.suggestSettlements = async (req, res) => {
+exports.suggestSettlements = async (req, res, next) => {
   try {
     const groupId = req.params.id;
     const balances = await calculateGroupBalances(groupId);
@@ -50,12 +50,11 @@ exports.suggestSettlements = async (req, res) => {
 
     res.json(suggestions);
   } catch (e) {
-    console.error("Error: ", e.message);
-    res.status(500).json({ error: e.message || 'Internal Server Error' });
+    next(e);
   }
 };
 
-exports.recordSettlements = async (req, res) => {
+exports.recordSettlements = async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
     const groupId = req.params.id;
@@ -84,12 +83,12 @@ exports.recordSettlements = async (req, res) => {
     const maxPayerCanPayCents = Math.round(Math.abs(payerBalance) * 100);
     const maxReceiverCanReceiveCents = Math.round(receiverBalance * 100);
 
-    if (amountCents > maxPayerCanPayCents) return abort(t, res, 400, {
-      message: `Cannot pay more than what is owed: ${(maxPayerCanPayCents / 100).toFixed(2)}`,
-    });
-    if (amountCents > maxReceiverCanReceiveCents) return abort(t, res, 400, {
-      message: `Cannot receive more than what is owed: ${(maxReceiverCanReceiveCents / 100).toFixed(2)}`,
-    });
+    if (amountCents > maxPayerCanPayCents) {
+      return abort(t, res, 400, `Cannot pay more than what is owed: ${(maxPayerCanPayCents / 100).toFixed(2)}`);
+    }
+    if (amountCents > maxReceiverCanReceiveCents) {
+      return abort(t, res, 400, `Cannot receive more than what is owed: ${(maxReceiverCanReceiveCents / 100).toFixed(2)}`);
+    }
 
     const settlement = await Settlement.create(
       {
@@ -112,13 +111,12 @@ exports.recordSettlements = async (req, res) => {
 
     res.status(201).json(createdSettlement);
   } catch (e) {
-    if (t) await t.rollback();
-    console.error("Error: ", e.message);
-    res.status(500).json({ error: e.message || 'Internal Server Error' });
+    if (t && !t.finished) await t.rollback();
+    next(e);
   }
 };
 
-exports.getGroupSettlements = async (req, res) => {
+exports.getGroupSettlements = async (req, res, next) => {
   try {
     const groupId = req.params.id;
 
@@ -136,7 +134,6 @@ exports.getGroupSettlements = async (req, res) => {
 
     res.json(settlements);
   } catch (e) {
-    console.error("Error: ", e.message);
-    res.status(500).json({ error: e.message || 'Internal Server Error' });
+    next(e);
   }
 };

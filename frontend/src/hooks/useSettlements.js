@@ -14,9 +14,11 @@ const useSettlements= (groupId)=> {
             setSuggestions(suggest.data);
             setHistory(hist.data.slice(0, 5)); // Keep only the latest 5 settlements
         } catch (error) {
-            if(error.name !== "AbortError") {
-                console.error("Failed to fetch settlements:", error);
+            // Ignore abort/cancel signals (fetch AbortError or axios CanceledError)
+            if (error?.name === 'AbortError' || error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || String(error?.message).toLowerCase().includes('canceled') || String(error?.message).toLowerCase().includes('aborted')) {
+                return;
             }
+            console.error("Failed to fetch settlements:", error);
         }
     };
 

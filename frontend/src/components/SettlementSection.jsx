@@ -1,4 +1,4 @@
-const SettlementSection = ({ suggestions, onSettleUp }) => {
+const SettlementSection = ({ suggestions, onSettleUp, currentMemberId, navigating }) => {
   return (
     <div className="mb-6">
       <div>
@@ -8,17 +8,26 @@ const SettlementSection = ({ suggestions, onSettleUp }) => {
         ) : (
           <div className="space-y-3">
             {suggestions.map((s, index)=>(
-                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-blue-50 border border-blue-100">
-                    <span className="text-sm font-medium">
-                        <span className="font-bold text-gray-800">{s.from.name}</span> pays <span className="font-bold text-gray-800">{s.to.name}</span>
-                    </span>
-                    <span className="text-sm font-bold text-blue-700">
-                        ₹{s.amount.toLocaleString()}
-                    </span>
-                    <span>
-                        <button onClick={()=>onSettleUp(s)} className="bg-blue-600 text-white text-sm p-1 rounded">Settle Up</button>
-                    </span>
-                </div>
+              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-blue-50 border border-blue-100">
+                <span className="text-sm font-medium">
+                  <span className="font-bold text-gray-800">{s.from.name}</span> pays <span className="font-bold text-gray-800">{s.to.name}</span>
+                </span>
+                <span className="text-sm font-bold text-blue-700">₹{s.amount.toLocaleString()}</span>
+                <span>
+                  {String(currentMemberId) === String(s.from.id) ? (
+                    <button
+                    onClick={()=>onSettleUp(s)}
+                    disabled={navigating}
+                    className={`bg-blue-600 text-white text-sm p-1 rounded ${navigating ? 'opacity-60 cursor-wait' : ''}`}>
+                    {navigating ? 'Opening...' : 'Settle Up'}
+                    </button>
+                  ) : (
+                    <button className="bg-gray-200 text-gray-600 text-sm p-1 rounded cursor-not-allowed" disabled>
+                    Not You
+                    </button>
+                  )}
+                </span>
+              </div>
             ))}
           </div>
         )}

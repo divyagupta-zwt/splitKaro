@@ -10,6 +10,9 @@ const useExpenses=(groupId)=>{
             const res = await getGroupExpenses(groupId, signal);
             setExpenses(res.data);
         } catch (error) {
+            if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || String(error?.message).toLowerCase().includes('canceled') || String(error?.message).toLowerCase().includes('aborted')) {
+                return;
+            }
             console.error("Failed to fetch expenses:", error);
         }
     };

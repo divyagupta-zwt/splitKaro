@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       validate: {
         notEmpty: { msg: 'Group name is required' },
-        min: {args: [3], msg: 'Name must be atleast 3 characters'}
+        len: {args: [3], msg: 'Name must be at least 3 characters'}
       }
     },
     description: {
