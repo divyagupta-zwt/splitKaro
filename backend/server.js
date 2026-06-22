@@ -9,7 +9,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: "*",
+  origin: [
+      "http://localhost:5173", // local frontend
+      "https://split-karo-inky.vercel.app" // deployed frontend
+    ],
   credentials: true
 }));
 app.use(express.json());
